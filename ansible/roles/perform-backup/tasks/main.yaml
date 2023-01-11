@@ -1,0 +1,28 @@
+---
+- name: Configure the backup {{ backup_type }} of {{ backupplan_name }} in {{ namespace }} namespace
+  become: true
+  template:
+    src: /vagrant/templates/backup.yaml.j2
+    dest: /tmp/backup.yaml
+
+- name: Execute the {{ backup_type }} backup of {{ backupplan_name }} in {{ namespace }} namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    namespace: "{{ namespace }}"
+    src: /tmp/backup.yaml
+
+- name: Wait for the backup to complete
+  shell: >
+    kubectl get backups/{{ backupplan_name }}-{{ timestamp }} -n {{ namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: backup_available
+  retries: 20
+  delay: 30
+  until: backup_available.stdout.find("Available") != -1
+  vars:
+    timestamp: "{{ timestamp }}"
+
+- debug:
+    var: backup_available.stdout_lines

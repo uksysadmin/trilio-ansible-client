@@ -1,0 +1,46 @@
+---
+- name: Create {{ namespace}} namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    name: "{{ namespace }}" # defining the namespace
+    api_version: v1
+    kind: Namespace
+    state: present    # State=present when you need to create new object
+
+# Create a secret using file stored locally
+
+- name: Create the secret used by the S3 target in the {{ namespace }} namespacet
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present      # State=present when you need to create new object
+    namespace: "{{ namespace }}"  # namespace for the secret
+    src: "{{ secret_yaml }}"
+  register: secret
+
+# Create the S3 target in specified namespace
+
+- name: Configure the target yaml
+  template:
+    src: /vagrant/templates/target.yaml.j2
+    dest: /tmp/target.yaml
+
+- name: Create the "{{ target_name }}" target in the {{ namespace }} namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present      # State=present when you need to create new object
+    namespace: "{{ namespace }}"  # defining the namespace
+    src: "/tmp/target.yaml"
+  register: target
+
+- name: Wait for "{{ target_name }}" target to be created in the {{ namespace }} namespace
+  shell: >
+    kubectl get targets/"{{ target_name }}" -n {{ namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: target_available
+  retries: 5
+  delay: 5
+  until: target_available.stdout.find("Available") != -1
+
+- debug:
+    var: target_available.stdout_lines

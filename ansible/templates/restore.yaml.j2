@@ -1,0 +1,12 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  name: {{ backup_prefix }}-restore
+spec:
+  source:
+    type: BackupPlan
+    backupPlan:
+      name: {{ backupplan_name }}
+      namespace: {{ namespace }}
+    restoreNamespace: {{ restore_namespace }}
+  skipIfAlreadyExists: true

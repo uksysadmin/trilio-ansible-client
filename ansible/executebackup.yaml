@@ -1,0 +1,13 @@
+---
+# This playbook will execute a backup according to the backupplan specified and backup type
+
+- name: Create Backup
+  hosts: localhost
+  user: vagrant
+  pre_tasks:
+    - set_fact:
+        timestamp: "{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+  vars_files:
+    config.yaml
+  roles:
+  - perform-backup

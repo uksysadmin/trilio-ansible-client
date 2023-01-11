@@ -1,0 +1,9 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Backup
+metadata:
+  name: {{ backup_prefix }}-{{ timestamp }}
+spec:
+  type: {{ backup_type }}
+  backupPlan:
+    name: {{ backupplan_name }}
+    namespace: {{ namespace }}

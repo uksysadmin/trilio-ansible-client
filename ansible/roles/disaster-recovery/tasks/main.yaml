@@ -1,0 +1,63 @@
+---
+- name: Get last backup created for {{ backupplan_name }} in {{ namespace }}
+  shell: >
+    kubectl get backups -n {{ namespace }} | awk '/{{ backupplan_name }}/ {print $1;exit;}'
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: backups
+
+- debug:
+    var: backups.stdout_lines
+
+- name: Fetch details of backup {{ backups.stdout }}
+  shell: >
+    kubectl describe backup {{ backups.stdout }} -n {{ namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: backup_describe
+
+- name: Identify unique location id
+  set_fact:
+    location: "{{backup_describe.stdout | regex_search(regexp,'\\1') }}"
+  vars:
+    regexp: 'Location:\s*(.+)\s'
+
+- debug:
+    var: location
+
+- name: Configure the remote restore of {{ backupplan_name }} to {{ dr_restored_namespace }} namespace
+  become: true
+  template:
+    src: /vagrant/templates/restore-location.yaml.j2
+    dest: /tmp/restore-location.yaml
+
+- name: Execute the remote recovery of {{ backupplan_name }} to {{ dr_restored_namespace }} namespace
+  k8s:
+    kubeconfig: "{{ dr_kubeconfig }}"
+    state: present
+    namespace: "{{ dr_restored_namespace }}"
+    src: /tmp/restore-location.yaml
+
+- name: Wait for remote restore to complete
+  shell: >
+    kubectl get restores -n {{ dr_restored_namespace }}
+  environment:
+    KUBECONFIG: "{{ dr_kubeconfig }}"
+  register: restore_available
+  retries: 20
+  delay: 30
+  until: restore_available.stdout.find("Completed") != -1
+
+- debug:
+    var: restore_available.stdout_lines
+
+- name: Recovered Application Deployment in {{ dr_restored_namespace }} on remote cluster
+  shell: >
+    kubectl get po,pvc,svc -n {{ dr_restored_namespace }}
+  environment:
+    KUBECONFIG: "{{ dr_kubeconfig }}"
+  register: deployment_output
+
+- debug:
+    var: deployment_output.stdout_lines
+

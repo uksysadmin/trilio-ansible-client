@@ -1,0 +1,13 @@
+---
+# This playbook will take the last backup created from specified backupplan and restore remotely
+
+- name: Disaster Recovery
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+    - role: create-target
+      kubeconfig: "{{ dr_kubeconfig }}"
+      namespace: "{{ dr_restored_namespace }}"
+    - disaster-recovery

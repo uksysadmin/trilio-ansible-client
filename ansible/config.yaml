@@ -1,0 +1,37 @@
+---
+kubeconfig: /vagrant/ansible/demorke.yml
+namespace: demo-ansible
+secret_yaml: /vagrant/ansible/secret.yaml
+secret_name: aws-secret
+
+# app yaml to deploy
+demo_app_yaml: /vagrant/ansible/demo-mysql-app.yaml
+
+#
+# Backup Target
+#
+# for purpose of the demo, we're just assuming S3
+target_name: s3-target
+bucket_name: tvk-migration-demo1
+
+#
+# Backup Plan Details
+#
+backupplan_name: demo-app-backupplan
+backupplan_type: ns   # ns|label
+backup_match_label: "app: k8s-demo-app"   # ignored for ns backup type
+
+#
+# Perform Backup
+backup_prefix: "{{ backupplan_name }}"
+backup_type: Full # Full | Incremental
+
+# Perform Restore (to new ns)
+restore_namespace: demo-ansible-restore
+
+# Disaster Recovery (currently migration as relies on source K8s top be available)
+# Future: use target browsing on cli to remove source cluster dependency
+dr_kubeconfig: /vagrant/ansible/rkestaging.yml
+dr_restored_namespace: dr-restore
+dr_backupplan: "{{ backupplan_name }}"     # if specified, uses last known backup
+#dr_location_id:     # can specify which backup to restore to if known

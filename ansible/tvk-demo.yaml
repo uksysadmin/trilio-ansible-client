@@ -1,0 +1,76 @@
+---
+# This set of playbooks will 
+#
+# - create the demo app in the namespace specified in /vagrant/config.yaml
+# - create a target as specified in the config.yaml
+# - create a backupplan as specified
+# - perform a backup
+# - restore application to a newly created ns
+#
+#
+# Important for OpenShift Users
+# Due to greater restrictions, set the following before running this script
+#
+# Do this on both the NS for the demo app namespace AND restore namespace
+#
+# oc adm policy add-scc-to-user anyuid -z default -n demo-ansible
+#
+
+###### CONFIGURATION #######
+# See config.yaml
+############################
+
+- name: Create Demo Applications
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - create-demo-app
+
+- name: Create Backup Target
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - create-target
+
+- name: Create Backup Plan
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - create-backupplan
+
+- name: Create Backup of Deployed Application
+  hosts: localhost
+  user: vagrant
+  pre_tasks:
+    - set_fact:
+        timestamp: "{{ lookup('pipe', 'date +%Y%m%d%H%M%S') }}"
+  vars_files:
+    config.yaml
+  roles:
+  - perform-backup
+
+- name: Perform restore to specified restore namespace
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - perform-restore
+
+- name: DR/Application and Data Migration to second cluster
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+    - role: create-target
+      kubeconfig: "{{ dr_kubeconfig }}"
+      namespace: "{{ dr_restored_namespace }}"
+    - disaster-recovery
+ 

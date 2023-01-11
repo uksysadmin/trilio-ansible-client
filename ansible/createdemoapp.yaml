@@ -1,0 +1,10 @@
+---
+# This playbook will create the demo app in the namespace specified in /vagrant/config.yaml
+
+- name: Create Demo Applications
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - create-demo-app

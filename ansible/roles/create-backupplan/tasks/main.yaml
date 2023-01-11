@@ -1,0 +1,29 @@
+---
+- name: Configure {{ backup_type }} type backup plan in {{ namespace }}
+  become: true
+  template:
+    src: /vagrant/templates/backupplan.yaml.j2
+    dest: /tmp/backupplan.yaml
+
+# Create the specified backup plan in specifed namespace
+
+- name: Create {{ backupplan_name }} backupplan of type {{ backup_type }} in {{ namespace }} namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present      # State=present when you need to create new object
+    namespace: "{{ namespace }}"
+    src: /tmp/backupplan.yaml
+  register: backupplan
+
+- name: Wait for {{ backupplan_name }} backupplan to be created in the {{ namespace }} namespace
+  shell: >
+    kubectl get backupplans/"{{ backupplan_name }}" -n {{ namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: backupplan_available
+  retries: 5
+  delay: 5
+  until: backupplan_available.stdout.find("Available") != -1
+
+- debug:
+    var: backupplan_available.stdout_lines

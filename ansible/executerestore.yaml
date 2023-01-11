@@ -1,0 +1,10 @@
+---
+# This playbook will perform a recovery of the created backup to a new namespace
+
+- name: Restore from backup
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - perform-restore

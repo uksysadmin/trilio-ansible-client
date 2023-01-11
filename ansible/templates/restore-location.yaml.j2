@@ -1,0 +1,12 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Restore
+metadata:
+  name: {{ backup_prefix }}-dr-restore
+spec:
+  source:
+    type: Location
+    location: {% for item in location %}{{ item }}{% endfor %} 
+    target:
+      name: {{ target_name }}
+      namespace: {{ dr_restored_namespace }}
+  skipIfAlreadyExists: true

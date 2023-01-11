@@ -1,0 +1,34 @@
+---
+- name: Create new {{ restore_namespace }} namespace for the restored application
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    name: "{{ restore_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present    # State=present when you need to create new object
+
+- name: Configure the restore of {{ backupplan_name }} to {{ restore_namespace }} namespace
+  become: true
+  template:
+    src: /vagrant/templates/restore.yaml.j2
+    dest: /tmp/restore.yaml
+
+- name: Execute the restore of the last backup of {{ backupplan_name }} to {{ restore_namespace }} namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    state: present
+    namespace: "{{ restore_namespace }}"
+    src: /tmp/restore.yaml
+
+- name: Wait for restore to complete
+  shell: >
+    kubectl get restores -n {{ restore_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: restore_available
+  retries: 20
+  delay: 30
+  until: restore_available.stdout.find("Completed") != -1
+
+- debug:
+    var: restore_available.stdout_lines

@@ -1,0 +1,27 @@
+---
+- name: Create {{ namespace}} namespace
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    name: "{{ namespace }}" # defining the namespace
+    api_version: v1
+    kind: Namespace
+    state: present    # State=present when you need to create new object
+
+- name: Create Demo MySQL + Web Tier App in {{ namespace }}
+  k8s:
+    kubeconfig: "{{ kubeconfig }}"
+    namespace: "{{ namespace }}" # defining the namespace
+    state: present    # State=present when you need to create new object
+    src: "{{ demo_app_yaml }}"
+    wait: true
+  register: deployment
+
+- name: Application Deployment in {{ namespace }}
+  shell: >
+    kubectl get po,pvc,svc -n {{ namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+  register: deployment_output
+
+- debug:
+    var: deployment_output.stdout_lines

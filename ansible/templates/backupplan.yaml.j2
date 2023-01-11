@@ -1,0 +1,15 @@
+apiVersion: triliovault.trilio.io/v1
+kind: BackupPlan
+metadata:
+  name: {{ backupplan_name }}
+spec:
+  backupNamespace: {{ namespace }}
+  backupConfig:
+    target:
+      name: {{ target_name }}
+  {% if backupplan_type == 'label' %}
+  backupPlanComponents:
+    custom:
+      - matchLabels:
+          {{ backup_match_label }}
+  {% endif %}

@@ -1,0 +1,10 @@
+---
+# This playbook will create the backupplan in the namespace specified in /vagrant/config.yaml
+
+- name: Create Backup Plan
+  hosts: localhost
+  user: vagrant
+  vars_files:
+    config.yaml
+  roles:
+  - create-backupplan

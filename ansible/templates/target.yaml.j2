@@ -1,0 +1,15 @@
+apiVersion: triliovault.trilio.io/v1
+kind: Target
+metadata:
+  name: {{ target_name }}
+spec:
+  type: ObjectStore
+  vendor: AWS
+  objectStoreCredentials:
+    url: "https://s3.amazonaws.com"
+    credentialSecret:
+      name: {{ secret_name }}
+      namespace: {{ namespace }}
+    bucketName: "{{ bucket_name }}"
+    region: "us-east-1"
+  thresholdCapacity: 100Gi
